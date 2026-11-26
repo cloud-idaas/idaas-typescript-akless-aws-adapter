@@ -7,6 +7,7 @@ import {
   credentialExpiration,
   credentialString,
 } from '@cloud-idaas/pam-client-sdk';
+import { SDK_VERSION } from './sdk-version';
 
 /** AWS STS snapshot mapped from PAM, with expiration as an ISO 8601 timestamp. */
 export interface AwsSessionCredentials extends ExpiringCredential {
@@ -48,20 +49,24 @@ export class IDaaSPamAwsCredentialsProvider extends CachedCloudCredentialProvide
    * @throws ConfigException - The configuration is invalid or the required default factory is not initialized.
    */
   constructor(options: AklessProviderOptions) {
-    super(options, (response) => {
-      const token = response.awsStsToken;
-      if (!token)
-        throw new CredentialException(
-          'Response is missing awsStsToken',
-          'InvalidCredentialResponse',
-        );
-      return {
-        accessKeyId: credentialString(token.accessKeyId, 'accessKeyId'),
-        secretAccessKey: credentialString(token.secretAccessKey, 'secretAccessKey'),
-        sessionToken: credentialString(token.sessionToken, 'sessionToken'),
-        expiration: new Date(credentialExpiration(response, token.expiration)).toISOString(),
-      };
-    });
+    super(
+      options,
+      (response) => {
+        const token = response.awsStsToken;
+        if (!token)
+          throw new CredentialException(
+            'Response is missing awsStsToken',
+            'InvalidCredentialResponse',
+          );
+        return {
+          accessKeyId: credentialString(token.accessKeyId, 'accessKeyId'),
+          secretAccessKey: credentialString(token.secretAccessKey, 'secretAccessKey'),
+          sessionToken: credentialString(token.sessionToken, 'sessionToken'),
+          expiration: new Date(credentialExpiration(response, token.expiration)).toISOString(),
+        };
+      },
+      `idaas-typescript-akless-aws-adapter/${SDK_VERSION}`,
+    );
   }
   /**
    * Wraps this provider as an AWS SDK v3 credentials function without creating another cache or fetching credentials.
